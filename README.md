@@ -72,3 +72,45 @@ extraVolumes:
     secret:
       secretName: yandexconfig
 ```
+
+## Build
+
+Build the binary locally (output: `build/bin/external-dns-yandex-webhook`):
+
+```shell
+make build
+```
+
+Or compile all packages directly:
+
+```shell
+go build ./...
+```
+
+Build a container image from source using the provided multi-stage `Dockerfile`:
+
+```shell
+docker build -t external-dns-yandex-webhook:local .
+```
+
+Release images are published to `ghcr.io/ismailbaskin/external-dns-yandex-webhook` and are built separately by GoReleaser (`goreleaser.dockerfile`).
+
+## Testing
+
+Run the full test suite:
+
+```shell
+go test ./...
+```
+
+Run a single test (add `-count=1` to bypass the test cache):
+
+```shell
+go test -v -run TestYandexProvider_Records ./internal/yandex/provider
+```
+
+Linting matches CI via `golangci-lint`:
+
+```shell
+golangci-lint run --exclude-files ".*_test.go"
+```

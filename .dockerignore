@@ -1,0 +1,8 @@
+.git
+build/
+clouds.yaml
+coverage.out
+config.yaml
+*.json
+docs/
+CLAUDE.md
