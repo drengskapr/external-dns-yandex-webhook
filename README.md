@@ -16,7 +16,7 @@ provider:
   name: webhook
   webhook:
     image:
-      repository: ghcr.io/ismailbaskin/external-dns-yandex-webhook
+      repository: ghcr.io/drengskapr/external-dns-yandex-webhook
       tag: 1.0.0
     args:
       - --folder-id=YOUR_FOLDER_ID
@@ -93,7 +93,7 @@ Build a container image from source using the provided multi-stage `Dockerfile`:
 docker build -t external-dns-yandex-webhook:local .
 ```
 
-Release images are published to `ghcr.io/ismailbaskin/external-dns-yandex-webhook` and are built separately by GoReleaser (`goreleaser.dockerfile`).
+Release images are published to `ghcr.io/drengskapr/external-dns-yandex-webhook` and are built separately by GoReleaser (`goreleaser.dockerfile`). The image namespace is derived from the repository owner at release time (`GITHUB_REPOSITORY_OWNER`), so a local `goreleaser release`/`build` run needs that variable exported manually; GitHub Actions sets it automatically.
 
 ## Testing
 
