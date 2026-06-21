@@ -64,7 +64,7 @@ func main() {
 	}
 
 	epf := endpoint.NewDomainFilter([]string{})
-	provider := provider.NewYandexProvider(epf, false, client)
+	provider := provider.NewYandexProvider(epf, false, cfg.DefaultTTL, client)
 	if err != nil {
 		log.Fatalf("NewYandexProvider: %v", err)
 	}

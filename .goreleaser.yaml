@@ -37,7 +37,7 @@ dockers:
   - ids:
       - external-dns-yandex-webhook
     image_templates:
-      - ghcr.io/ismailbaskin/{{ .ProjectName }}:{{ .Version }}-amd64
+      - ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}:{{ .Version }}-amd64
     goos: linux
     goarch: amd64
     dockerfile: goreleaser.dockerfile
@@ -48,7 +48,7 @@ dockers:
   - ids:
       - external-dns-yandex-webhook
     image_templates:
-      - ghcr.io/ismailbaskin/{{ .ProjectName }}:{{ .Version }}-arm64
+      - ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}:{{ .Version }}-arm64
     goos: linux
     goarch: arm64
     dockerfile: goreleaser.dockerfile
@@ -58,10 +58,10 @@ dockers:
     use: buildx
 
 docker_manifests:
-  - name_template: "ghcr.io/ismailbaskin/{{ .ProjectName }}:{{ .Version }}"
+  - name_template: "ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}:{{ .Version }}"
     image_templates:
-      - "ghcr.io/ismailbaskin/{{ .ProjectName }}:{{ .Version }}-amd64"
-      - "ghcr.io/ismailbaskin/{{ .ProjectName }}:{{ .Version }}-arm64"
+      - "ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}:{{ .Version }}-arm64"
 
 archives:
   - name_template: "{{ .ProjectName }}-{{ .Version }}.{{ .Os }}-{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
@@ -73,15 +73,13 @@ checksum:
   name_template: "{{ .ProjectName }}-{{ .Version }}_checksums.txt"
   algorithm: sha256
 
-# Configuration for GitHub Releases
+# Configuration for GitHub Releases.
+# owner/name are auto-detected from the git remote, so this works in any fork.
 release:
-  github:
-    owner: ismailbaskin
-    name: external-dns-yandex-webhook
   footer: |
     ## Docker Images
-    - ghcr.io/ismailbaskin/external-dns-yandex-webhook:{{ trimprefix .Tag "v" }} (universal, multi-platform)
-    - ghcr.io/ismailbaskin/external-dns-yandex-webhook:{{ trimprefix .Tag "v" }}-amd64
-    - ghcr.io/ismailbaskin/external-dns-yandex-webhook:{{ trimprefix .Tag "v" }}-arm64
+    - ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/external-dns-yandex-webhook:{{ trimprefix .Tag "v" }} (universal, multi-platform)
+    - ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/external-dns-yandex-webhook:{{ trimprefix .Tag "v" }}-amd64
+    - ghcr.io/{{ tolower .Env.GITHUB_REPOSITORY_OWNER }}/external-dns-yandex-webhook:{{ trimprefix .Tag "v" }}-arm64
   prerelease: auto
   replace_existing_draft: true

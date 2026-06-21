@@ -36,16 +36,20 @@ type yandexProvider struct {
 	client client.YandexDNSClient
 
 	// only consider hosted zones managing domains ending in this suffix
-	domainFilter endpoint.DomainFilter
+	domainFilter *endpoint.DomainFilter
 	dryRun       bool
+
+	// TTL applied to records whose endpoint does not specify one
+	defaultTTL int64
 }
 
 // NewYandexProvider initializes a new Yandex Cloud DNS based Provider
-func NewYandexProvider(domainFilter endpoint.DomainFilter, dryRun bool, client client.YandexDNSClient) provider.Provider {
+func NewYandexProvider(domainFilter *endpoint.DomainFilter, dryRun bool, defaultTTL int64, client client.YandexDNSClient) provider.Provider {
 	return &yandexProvider{
 		client:       client,
 		domainFilter: domainFilter,
 		dryRun:       dryRun,
+		defaultTTL:   defaultTTL,
 	}
 }
 
@@ -141,10 +145,12 @@ type recordSet struct {
 	recordType  string
 	zoneID      string
 	recordSetID string
+	delete      bool
+	ttl         int64
 	names       map[string]bool
 }
 
-func addEndpoint(ep *endpoint.Endpoint, recordSets map[string]*recordSet, oldEndpoints []*endpoint.Endpoint, delete bool) {
+func addEndpoint(ep *endpoint.Endpoint, recordSets map[string]*recordSet, delete bool) {
 	key := fmt.Sprintf("%s-%s", ep.DNSName, ep.RecordType)
 	if _, ok := recordSets[key]; !ok {
 		recordSets[key] = &recordSet{
@@ -155,13 +161,19 @@ func addEndpoint(ep *endpoint.Endpoint, recordSets map[string]*recordSet, oldEnd
 	}
 
 	rs := recordSets[key]
+	rs.delete = delete
 
-	if !delete {
-		for _, target := range ep.Targets {
-			rs.names[target] = true
-		}
+	// Honor the endpoint's TTL when external-dns provides one; otherwise leave
+	// it zero so upsertRecordSet falls back to the configured default.
+	if ep.RecordTTL.IsConfigured() {
+		rs.ttl = int64(ep.RecordTTL)
 	}
 
+	// Both replacements and deletions must carry the record data: Yandex
+	// validates deletions by content and rejects an empty data set.
+	for _, target := range ep.Targets {
+		rs.names[target] = true
+	}
 }
 
 func (p yandexProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
@@ -173,20 +185,15 @@ func (p yandexProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 	recordSets := make(map[string]*recordSet)
 
 	for _, ep := range changes.Create {
-		addEndpoint(ep, recordSets, nil, false)
-	}
-
-	oldEndpoints, err := p.Records(ctx)
-	if err != nil {
-		return err
+		addEndpoint(ep, recordSets, false)
 	}
 
 	for _, ep := range changes.UpdateNew {
-		addEndpoint(ep, recordSets, oldEndpoints, false)
+		addEndpoint(ep, recordSets, false)
 	}
 
 	for _, ep := range changes.Delete {
-		addEndpoint(ep, recordSets, oldEndpoints, true)
+		addEndpoint(ep, recordSets, true)
 	}
 
 	for _, rs := range recordSets {
@@ -200,24 +207,6 @@ func (p yandexProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 }
 
 func (p yandexProvider) upsertRecordSet(ctx context.Context, rs *recordSet, managedZones map[string]string) error {
-	if len(rs.names) == 0 {
-		if p.dryRun {
-			log.Infof("Would delete record set %s in zone %s", rs.dnsName, rs.zoneID)
-			return nil
-		}
-
-		req := client.UpsertRequest{
-			DnsZoneID: rs.zoneID,
-			Deletions: []client.RecordSet{{
-				Name: normalizeDNSName(rs.dnsName),
-				Type: rs.recordType,
-				TTL:  300,
-			}},
-		}
-
-		return p.client.UpsertRecordSets(ctx, req)
-	}
-
 	if rs.zoneID == "" {
 		var err error
 		rs.zoneID, err = p.getHostZoneID(rs.dnsName, managedZones)
@@ -229,6 +218,33 @@ func (p yandexProvider) upsertRecordSet(ctx context.Context, rs *recordSet, mana
 	var records []string
 	for name := range rs.names {
 		records = append(records, name)
+	}
+
+	ttl := rs.ttl
+	if ttl == 0 {
+		ttl = p.defaultTTL
+	}
+
+	recordSet := client.RecordSet{
+		Name: normalizeDNSName(rs.dnsName),
+		Type: rs.recordType,
+		TTL:  ttl,
+		Data: records,
+	}
+
+	if rs.delete {
+		if p.dryRun {
+			log.Infof("Would delete record set %s with type %s in zone %s",
+				rs.dnsName, rs.recordType, rs.zoneID)
+			return nil
+		}
+
+		req := client.UpsertRequest{
+			DnsZoneID: rs.zoneID,
+			Deletions: []client.RecordSet{recordSet},
+		}
+
+		return p.client.UpsertRecordSets(ctx, req)
 	}
 
 	if p.dryRun {
@@ -245,13 +261,8 @@ func (p yandexProvider) upsertRecordSet(ctx context.Context, rs *recordSet, mana
 	}
 
 	req := client.UpsertRequest{
-		DnsZoneID: rs.zoneID,
-		Replacements: []client.RecordSet{{
-			Name: normalizeDNSName(rs.dnsName),
-			Type: rs.recordType,
-			TTL:  300,
-			Data: records,
-		}},
+		DnsZoneID:    rs.zoneID,
+		Replacements: []client.RecordSet{recordSet},
 	}
 
 	return p.client.UpsertRecordSets(ctx, req)

@@ -5,3 +5,7 @@ build/
 clouds.yaml
 
 coverage.out
+
+# agents
+docs/superpowers
+CLAUDE.md
