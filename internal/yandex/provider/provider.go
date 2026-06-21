@@ -36,12 +36,12 @@ type yandexProvider struct {
 	client client.YandexDNSClient
 
 	// only consider hosted zones managing domains ending in this suffix
-	domainFilter endpoint.DomainFilter
+	domainFilter *endpoint.DomainFilter
 	dryRun       bool
 }
 
 // NewYandexProvider initializes a new Yandex Cloud DNS based Provider
-func NewYandexProvider(domainFilter endpoint.DomainFilter, dryRun bool, client client.YandexDNSClient) provider.Provider {
+func NewYandexProvider(domainFilter *endpoint.DomainFilter, dryRun bool, client client.YandexDNSClient) provider.Provider {
 	return &yandexProvider{
 		client:       client,
 		domainFilter: domainFilter,
