@@ -45,7 +45,7 @@ func TestYandexProvider_Records(t *testing.T) {
 			zones: []client.Zone{
 				{
 					ID:   "zone-1",
-					Name: "zone-1.ext-dns-test-2.yc.zalan.do",
+					Name: "zone-1.ext-dns-test-2.yc.example.com",
 				},
 			},
 			recordSets: map[string][]client.RecordSet{
@@ -78,14 +78,14 @@ func TestYandexProvider_Records(t *testing.T) {
 			},
 			expectedResult: []*endpoint.Endpoint{
 				{
-					DNSName:    "list-test.zone-1.ext-dns-test-2.yc.zalan.do",
+					DNSName:    "list-test.zone-1.ext-dns-test-2.yc.example.com",
 					RecordType: "A",
 					Targets:    endpoint.Targets{"1.2.3.4"},
 					RecordTTL:  300,
 					Labels:     map[string]string{},
 				},
 				{
-					DNSName:    "list-test-alias.zone-1.ext-dns-test-2.yc.zalan.do",
+					DNSName:    "list-test-alias.zone-1.ext-dns-test-2.yc.example.com",
 					RecordType: "CNAME",
 					Targets:    endpoint.Targets{"foo.elb.amazonaws.com"},
 					RecordTTL:  300,
@@ -105,7 +105,7 @@ func TestYandexProvider_Records(t *testing.T) {
 			zones: []client.Zone{
 				{
 					ID:   "zone-1",
-					Name: "zone-1.ext-dns-test-2.yc.zalan.do",
+					Name: "zone-1.ext-dns-test-2.yc.example.com",
 				},
 			},
 			recordsErr:  fmt.Errorf("failed to list records"),
@@ -127,7 +127,7 @@ func TestYandexProvider_Records(t *testing.T) {
 				return tt.recordSets[zoneID], tt.recordsErr
 			}
 
-			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{"ext-dns-test-2.yc.zalan.do."}), false, mockClient)
+			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{"ext-dns-test-2.yc.example.com."}), false, 300, mockClient)
 
 			result, err := provider.Records(context.Background())
 
@@ -154,23 +154,23 @@ func TestYandexProvider_ApplyChanges(t *testing.T) {
 			zones: []client.Zone{
 				{
 					ID:   "zone-1",
-					Name: "zone-1.ext-dns-test-2.yc.zalan.do",
+					Name: "zone-1.ext-dns-test-2.yc.example.com",
 				},
 				{
 					ID:   "zone-2",
-					Name: "zone-2.ext-dns-test-2.yc.zalan.do",
+					Name: "zone-2.ext-dns-test-2.yc.example.com",
 				},
 			},
 			changes: &plan.Changes{
 				Create: []*endpoint.Endpoint{
 					{
-						DNSName:    "create-test.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "create-test.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "A",
 						Targets:    endpoint.Targets{"8.8.8.8"},
 						RecordTTL:  300,
 					},
 					{
-						DNSName:    "create-test-cname.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "create-test-cname.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "CNAME",
 						Targets:    endpoint.Targets{"foo.elb.amazonaws.com"},
 						RecordTTL:  300,
@@ -178,14 +178,14 @@ func TestYandexProvider_ApplyChanges(t *testing.T) {
 				},
 				UpdateNew: []*endpoint.Endpoint{
 					{
-						DNSName:    "update-test.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "update-test.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "A",
 						Targets:    endpoint.Targets{"1.2.3.4"},
 						RecordTTL:  300,
 						Labels:     map[string]string{},
 					},
 					{
-						DNSName:    "update-test-cname.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "update-test-cname.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "CNAME",
 						Targets:    endpoint.Targets{"baz.elb.amazonaws.com"},
 						RecordTTL:  300,
@@ -194,25 +194,25 @@ func TestYandexProvider_ApplyChanges(t *testing.T) {
 				},
 				UpdateOld: []*endpoint.Endpoint{
 					{
-						DNSName:    "update-test.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "update-test.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "A",
 						Targets:    endpoint.Targets{"8.8.8.8"},
 					},
 					{
-						DNSName:    "update-test-cname.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "update-test-cname.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "CNAME",
 						Targets:    endpoint.Targets{"bar.elb.amazonaws.com"},
 					},
 				},
 				Delete: []*endpoint.Endpoint{
 					{
-						DNSName:    "delete-test.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "delete-test.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "A",
 						Targets:    endpoint.Targets{"8.8.8.8"},
 						Labels:     map[string]string{},
 					},
 					{
-						DNSName:    "delete-test-cname.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "delete-test-cname.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "CNAME",
 						Targets:    endpoint.Targets{"qux.elb.amazonaws.com"},
 						Labels:     map[string]string{},
@@ -232,13 +232,13 @@ func TestYandexProvider_ApplyChanges(t *testing.T) {
 			zones: []client.Zone{
 				{
 					ID:   "zone-1",
-					Name: "zone-1.ext-dns-test-2.yc.zalan.do",
+					Name: "zone-1.ext-dns-test-2.yc.example.com",
 				},
 			},
 			changes: &plan.Changes{
 				Delete: []*endpoint.Endpoint{
 					{
-						DNSName:    "delete-test.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "delete-test.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "A",
 						Targets:    endpoint.Targets{"8.8.8.8"},
 						Labels:     map[string]string{},
@@ -255,7 +255,7 @@ func TestYandexProvider_ApplyChanges(t *testing.T) {
 			mockClient := NewMockYandexClient()
 			mockClient.SetZones(tt.zones)
 
-			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{"ext-dns-test-2.yc.zalan.do."}), tt.dryRun, mockClient)
+			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{"ext-dns-test-2.yc.example.com."}), tt.dryRun, 300, mockClient)
 
 			err := provider.ApplyChanges(context.Background(), tt.changes)
 
@@ -268,6 +268,92 @@ func TestYandexProvider_ApplyChanges(t *testing.T) {
 					assert.NotEmpty(t, upsertCalls)
 				}
 			}
+		})
+	}
+}
+
+func TestYandexProvider_ApplyChanges_Delete(t *testing.T) {
+	mockClient := NewMockYandexClient()
+	mockClient.SetZones([]client.Zone{
+		{ID: "zone-1", Name: "zone-1.example.com"},
+	})
+
+	changes := &plan.Changes{
+		Delete: []*endpoint.Endpoint{
+			{
+				DNSName:    "delete-test.zone-1.example.com",
+				RecordType: "A",
+				Targets:    endpoint.Targets{"8.8.8.8", "9.9.9.9"},
+				Labels:     map[string]string{},
+			},
+		},
+	}
+
+	provider := NewYandexProvider(endpoint.NewDomainFilter([]string{"example.com."}), false, 300, mockClient)
+
+	require.NoError(t, provider.ApplyChanges(context.Background(), changes))
+
+	calls := mockClient.GetUpsertCalls()
+	require.Len(t, calls, 1)
+
+	req := calls[0]
+	assert.Equal(t, "zone-1", req.DnsZoneID, "deletion must target the resolved zone")
+	require.Len(t, req.Deletions, 1)
+	require.Empty(t, req.Replacements)
+
+	del := req.Deletions[0]
+	assert.Equal(t, "delete-test.zone-1.example.com.", del.Name)
+	assert.Equal(t, "A", del.Type)
+	assert.ElementsMatch(t, []string{"8.8.8.8", "9.9.9.9"}, del.Data,
+		"deletion must carry the record data; Yandex requires 1-100 elements")
+}
+
+func TestYandexProvider_ApplyChanges_TTL(t *testing.T) {
+	tests := []struct {
+		name        string
+		endpoint    *endpoint.Endpoint
+		defaultTTL  int64
+		expectedTTL int64
+	}{
+		{
+			name: "honors configured endpoint TTL",
+			endpoint: &endpoint.Endpoint{
+				DNSName:    "ttl-test.zone-1.example.com",
+				RecordType: "A",
+				Targets:    endpoint.Targets{"1.2.3.4"},
+				RecordTTL:  endpoint.TTL(600),
+			},
+			defaultTTL:  300,
+			expectedTTL: 600,
+		},
+		{
+			name: "falls back to default when endpoint TTL unset",
+			endpoint: &endpoint.Endpoint{
+				DNSName:    "ttl-test.zone-1.example.com",
+				RecordType: "A",
+				Targets:    endpoint.Targets{"1.2.3.4"},
+			},
+			defaultTTL:  120,
+			expectedTTL: 120,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockClient := NewMockYandexClient()
+			mockClient.SetZones([]client.Zone{
+				{ID: "zone-1", Name: "zone-1.example.com"},
+			})
+
+			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{"example.com."}), false, tt.defaultTTL, mockClient)
+
+			changes := &plan.Changes{Create: []*endpoint.Endpoint{tt.endpoint}}
+			require.NoError(t, provider.ApplyChanges(context.Background(), changes))
+
+			calls := mockClient.GetUpsertCalls()
+			require.Len(t, calls, 1)
+			require.Len(t, calls[0].Replacements, 1)
+			assert.Equal(t, tt.expectedTTL, calls[0].Replacements[0].TTL)
 		})
 	}
 }
@@ -353,7 +439,7 @@ func TestYandexProvider_AdjustEndpoints(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{}), false, NewMockYandexClient())
+			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{}), false, 300, NewMockYandexClient())
 
 			result, err := provider.AdjustEndpoints(tt.endpoints)
 
@@ -381,16 +467,16 @@ func TestYandexProvider_GetZones(t *testing.T) {
 			zones: []client.Zone{
 				{
 					ID:   "zone-1",
-					Name: "zone-1.ext-dns-test-2.yc.zalan.do",
+					Name: "zone-1.ext-dns-test-2.yc.example.com",
 				},
 				{
 					ID:   "zone-2",
 					Name: "zone-2.another-domain.com",
 				},
 			},
-			domainFilter: []string{"ext-dns-test-2.yc.zalan.do."},
+			domainFilter: []string{"ext-dns-test-2.yc.example.com."},
 			expectedZones: map[string]string{
-				"zone-1.ext-dns-test-2.yc.zalan.do": "zone-1",
+				"zone-1.ext-dns-test-2.yc.example.com": "zone-1",
 			},
 			expectError: false,
 		},
@@ -430,7 +516,7 @@ func TestYandexProvider_GetZones(t *testing.T) {
 				return tt.zones, tt.zonesErr
 			}
 
-			provider := NewYandexProvider(endpoint.NewDomainFilter(tt.domainFilter), false, mockClient)
+			provider := NewYandexProvider(endpoint.NewDomainFilter(tt.domainFilter), false, 300, mockClient)
 			zones, err := provider.(*yandexProvider).getZones(context.Background())
 
 			if tt.expectError {
@@ -453,20 +539,20 @@ func TestYandexProvider_GetHostZoneID(t *testing.T) {
 	}{
 		{
 			name:     "find matching zone",
-			hostname: "test.zone-1.ext-dns-test-2.yc.zalan.do",
+			hostname: "test.zone-1.ext-dns-test-2.yc.example.com",
 			managedZones: map[string]string{
-				"zone-1.ext-dns-test-2.yc.zalan.do": "zone-1",
-				"zone-2.ext-dns-test-2.yc.zalan.do": "zone-2",
+				"zone-1.ext-dns-test-2.yc.example.com": "zone-1",
+				"zone-2.ext-dns-test-2.yc.example.com": "zone-2",
 			},
 			expectedID:  "zone-1",
 			expectError: false,
 		},
 		{
 			name:     "find longest matching zone",
-			hostname: "test.sub.zone-1.ext-dns-test-2.yc.zalan.do",
+			hostname: "test.sub.zone-1.ext-dns-test-2.yc.example.com",
 			managedZones: map[string]string{
-				"zone-1.ext-dns-test-2.yc.zalan.do":     "zone-1",
-				"sub.zone-1.ext-dns-test-2.yc.zalan.do": "sub-zone-1",
+				"zone-1.ext-dns-test-2.yc.example.com":     "zone-1",
+				"sub.zone-1.ext-dns-test-2.yc.example.com": "sub-zone-1",
 			},
 			expectedID:  "sub-zone-1",
 			expectError: false,
@@ -475,7 +561,7 @@ func TestYandexProvider_GetHostZoneID(t *testing.T) {
 			name:     "no matching zone found",
 			hostname: "test.unknown-zone.com",
 			managedZones: map[string]string{
-				"zone-1.ext-dns-test-2.yc.zalan.do": "zone-1",
+				"zone-1.ext-dns-test-2.yc.example.com": "zone-1",
 			},
 			expectError: true,
 		},
@@ -510,13 +596,13 @@ func TestYandexProvider_ApplyChanges_Errors(t *testing.T) {
 			zones: []client.Zone{
 				{
 					ID:   "zone-1",
-					Name: "zone-1.ext-dns-test-2.yc.zalan.do",
+					Name: "zone-1.ext-dns-test-2.yc.example.com",
 				},
 			},
 			changes: &plan.Changes{
 				Create: []*endpoint.Endpoint{
 					{
-						DNSName:    "test.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "test.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "A",
 						Targets:    endpoint.Targets{"192.0.2.1"},
 					},
@@ -530,13 +616,13 @@ func TestYandexProvider_ApplyChanges_Errors(t *testing.T) {
 			zones: []client.Zone{
 				{
 					ID:   "zone-1",
-					Name: "zone-1.ext-dns-test-2.yc.zalan.do",
+					Name: "zone-1.ext-dns-test-2.yc.example.com",
 				},
 			},
 			changes: &plan.Changes{
 				Create: []*endpoint.Endpoint{
 					{
-						DNSName:    "test.zone-1.ext-dns-test-2.yc.zalan.do",
+						DNSName:    "test.zone-1.ext-dns-test-2.yc.example.com",
 						RecordType: "A",
 						Targets:    endpoint.Targets{"192.0.2.1"},
 					},
@@ -558,7 +644,7 @@ func TestYandexProvider_ApplyChanges_Errors(t *testing.T) {
 				return tt.upsertErr
 			}
 
-			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{"ext-dns-test-2.yc.zalan.do."}), false, mockClient)
+			provider := NewYandexProvider(endpoint.NewDomainFilter([]string{"ext-dns-test-2.yc.example.com."}), false, 300, mockClient)
 
 			err := provider.ApplyChanges(context.Background(), tt.changes)
 			assert.Error(t, err)

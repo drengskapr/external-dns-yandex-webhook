@@ -10,6 +10,7 @@ import (
 type Config struct {
 	FolderID    string       `mapstructure:"folder_id"`
 	AuthKeyFile string       `mapstructure:"auth_key_file"`
+	DefaultTTL  int64        `mapstructure:"default_ttl"`
 	Server      ServerConfig `mapstructure:"server"`
 }
 
@@ -33,6 +34,7 @@ func LoadConfig() (*Config, error) {
 	pflag.String("auth-key-file", "/etc/kubernetes/key.json", "Path to Yandex Cloud service account key file")
 	pflag.Int("webhook-port", 8888, "Port for webhook server")
 	pflag.Int("health-port", 8080, "Port for health check server")
+	pflag.Int64("default-ttl", 300, "Default record TTL (seconds) used when an endpoint has no TTL set")
 	pflag.Parse()
 
 	// Bind CLI flags to Viper
@@ -48,10 +50,14 @@ func LoadConfig() (*Config, error) {
 	if err := viper.BindPFlag("server.health_port", pflag.Lookup("health-port")); err != nil {
 		return nil, fmt.Errorf("error binding health-port flag: %v", err)
 	}
+	if err := viper.BindPFlag("default_ttl", pflag.Lookup("default-ttl")); err != nil {
+		return nil, fmt.Errorf("error binding default-ttl flag: %v", err)
+	}
 
 	// Set default values
 	viper.SetDefault("server.webhook_port", 8888)
 	viper.SetDefault("server.health_port", 8080)
+	viper.SetDefault("default_ttl", 300)
 
 	// Read configuration file
 	if err := viper.ReadInConfig(); err != nil {
