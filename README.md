@@ -93,7 +93,7 @@ Build a container image from source using the provided multi-stage `Dockerfile`:
 docker build -t external-dns-yandex-webhook:local .
 ```
 
-Release images are published to `ghcr.io/drengskapr/external-dns-yandex-webhook` and are built separately by GoReleaser (`goreleaser.dockerfile`). The image namespace is derived from the repository owner at release time (`GITHUB_REPOSITORY_OWNER`), so a local `goreleaser release`/`build` run needs that variable exported manually; GitHub Actions sets it automatically.
+Release images are published to `ghcr.io/<owner>/external-dns-yandex-webhook`. Pushing a `v*` git tag triggers the GitHub Actions `release` job, which builds the `linux/amd64` image from the multi-stage `Dockerfile` and pushes it tagged with the version — the tag minus its leading `v` (e.g. `v1.2.3` → `:1.2.3`). The image namespace is derived from the repository owner (`GITHUB_REPOSITORY_OWNER`), which GitHub Actions sets automatically.
 
 ## Testing
 
