@@ -16,11 +16,15 @@ import (
 )
 
 func main() {
-	log.SetLevel(log.DebugLevel)
-
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Error loading configuration: %v", err)
+	}
+
+	level, _ := log.ParseLevel(cfg.LogLevel) // already validated in LoadConfig
+	log.SetLevel(level)
+	if cfg.LogFormat == "json" {
+		log.SetFormatter(&log.JSONFormatter{})
 	}
 
 	startedChan := make(chan struct{})

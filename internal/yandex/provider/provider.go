@@ -69,6 +69,7 @@ func (p yandexProvider) getZones(ctx context.Context) (map[string]string, error)
 
 	zones, err := p.client.ListZones(ctx)
 	if err != nil {
+		log.WithError(err).Error("failed to list zones")
 		return nil, err
 	}
 
@@ -99,8 +100,14 @@ func (p yandexProvider) getHostZoneID(hostname string, managedZones map[string]s
 	}
 
 	if resultID == "" {
+		log.WithField("hostname", hostname).Warn("no matching zone found")
 		return "", fmt.Errorf("no matching zone found for %s", hostname)
 	}
+
+	log.WithFields(log.Fields{
+		"hostname": hostname,
+		"zoneID":   resultID,
+	}).Debug("matched zone")
 
 	return resultID, nil
 }
@@ -116,8 +123,14 @@ func (p yandexProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 	for zoneName, zoneID := range zones {
 		recordSets, err := p.client.ListRecordSets(ctx, zoneID)
 		if err != nil {
+			log.WithError(err).WithField("zone", zoneName).Error("failed to list record sets")
 			return nil, err
 		}
+
+		log.WithFields(log.Fields{
+			"zone":    zoneName,
+			"records": len(recordSets),
+		}).Debug("listed zone record sets")
 
 		for _, recordSet := range recordSets {
 			if recordSet.Type == "SOA" || recordSet.Type == "NS" {
@@ -136,6 +149,11 @@ func (p yandexProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, erro
 			endpoints = append(endpoints, ep)
 		}
 	}
+
+	log.WithFields(log.Fields{
+		"zones":   len(zones),
+		"records": len(endpoints),
+	}).Info("listed records")
 
 	return endpoints, nil
 }
@@ -184,6 +202,12 @@ func (p yandexProvider) ApplyChanges(ctx context.Context, changes *plan.Changes)
 
 	recordSets := make(map[string]*recordSet)
 
+	log.WithFields(log.Fields{
+		"creates": len(changes.Create),
+		"updates": len(changes.UpdateNew),
+		"deletes": len(changes.Delete),
+	}).Info("applying changes")
+
 	for _, ep := range changes.Create {
 		addEndpoint(ep, recordSets, false)
 	}
@@ -225,6 +249,23 @@ func (p yandexProvider) upsertRecordSet(ctx context.Context, rs *recordSet, mana
 		ttl = p.defaultTTL
 	}
 
+	action := "update"
+	if rs.delete {
+		action = "delete"
+	} else if rs.recordSetID == "" {
+		action = "create"
+	}
+
+	log.WithFields(log.Fields{
+		"dnsName":    rs.dnsName,
+		"recordType": rs.recordType,
+		"targets":    records,
+		"ttl":        ttl,
+		"action":     action,
+		"zoneID":     rs.zoneID,
+		"dryRun":     p.dryRun,
+	}).Info("applying record set")
+
 	recordSet := client.RecordSet{
 		Name: normalizeDNSName(rs.dnsName),
 		Type: rs.recordType,
@@ -232,38 +273,27 @@ func (p yandexProvider) upsertRecordSet(ctx context.Context, rs *recordSet, mana
 		Data: records,
 	}
 
-	if rs.delete {
-		if p.dryRun {
-			log.Infof("Would delete record set %s with type %s in zone %s",
-				rs.dnsName, rs.recordType, rs.zoneID)
-			return nil
-		}
-
-		req := client.UpsertRequest{
-			DnsZoneID: rs.zoneID,
-			Deletions: []client.RecordSet{recordSet},
-		}
-
-		return p.client.UpsertRecordSets(ctx, req)
-	}
-
 	if p.dryRun {
-		operation := "update"
-		if rs.recordSetID == "" {
-			operation = "create"
-		}
-		log.Infof("Would %s record set %s with type %s in zone %s",
-			operation,
-			rs.dnsName,
-			rs.recordType,
-			rs.zoneID)
 		return nil
 	}
 
-	req := client.UpsertRequest{
-		DnsZoneID:    rs.zoneID,
-		Replacements: []client.RecordSet{recordSet},
+	req := client.UpsertRequest{DnsZoneID: rs.zoneID}
+	if rs.delete {
+		req.Deletions = []client.RecordSet{recordSet}
+	} else {
+		req.Replacements = []client.RecordSet{recordSet}
 	}
 
-	return p.client.UpsertRecordSets(ctx, req)
+	if err := p.client.UpsertRecordSets(ctx, req); err != nil {
+		// external-dns's webhook API re-logs this returned error at a higher
+		// level; keep this log for the structured zone/record context it adds.
+		log.WithError(err).WithFields(log.Fields{
+			"dnsName":    rs.dnsName,
+			"recordType": rs.recordType,
+			"action":     action,
+		}).Error("failed to upsert record set")
+		return err
+	}
+
+	return nil
 }
