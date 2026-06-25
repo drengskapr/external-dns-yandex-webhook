@@ -33,10 +33,18 @@ The referenced `extraVolumeMount` points to a `Secret` containing the service ac
 
 ## Command Line Arguments
 
-The webhook requires the following command line arguments:
+### Required
 
 - `--folder-id`: Yandex Cloud folder ID where your DNS zones are located.
-- `--auth-key-file`: Path to the Yandex Cloud service account key file.
+- `--auth-key-file`: Path to the Yandex Cloud service account key file (default `/etc/kubernetes/key.json`).
+
+### Optional
+
+- `--webhook-port`: Port for the webhook server (default `8888`).
+- `--health-port`: Port for the health check server (default `8080`).
+- `--default-ttl`: Default record TTL in seconds, used when an endpoint has no TTL set (default `300`).
+- `--log-level`: Log verbosity — `trace`, `debug`, `info`, `warn`, `error`, `fatal`, or `panic` (default `info`).
+- `--log-format`: Log output format — `json` or `text` (default `json`).
 
 ## Authentication
 
