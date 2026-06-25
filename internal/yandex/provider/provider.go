@@ -285,6 +285,8 @@ func (p yandexProvider) upsertRecordSet(ctx context.Context, rs *recordSet, mana
 	}
 
 	if err := p.client.UpsertRecordSets(ctx, req); err != nil {
+		// external-dns's webhook API re-logs this returned error at a higher
+		// level; keep this log for the structured zone/record context it adds.
 		log.WithError(err).WithFields(log.Fields{
 			"dnsName":    rs.dnsName,
 			"recordType": rs.recordType,
