@@ -9,13 +9,10 @@ on:
     # check, as a gate before opening a PR.
     branches-ignore:
       - main
-  # Pull requests run the same checks; build-only, nothing is published.
-  pull_request:
 
-# A branch push and its PR share a group (same head ref), so the older run is
-# cancelled instead of running twice.
+# A new push to the same ref cancels an in-progress run for it.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
